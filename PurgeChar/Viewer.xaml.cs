@@ -40,5 +40,27 @@ namespace PurgeChar
             binding.XPath = "child::node()";
             xmlTree.SetBinding(TreeView.ItemsSourceProperty, binding);
         }
+
+        public bool? LoadContent(string validXml)
+        {
+            if (string.IsNullOrWhiteSpace(validXml))
+            {
+                xmlDocument = null;
+                return false;
+            }
+
+            try
+            {
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(validXml);
+                xmlDocument = doc;
+                return true;
+            }
+            catch (XmlException)
+            {
+                xmlDocument = null;
+                return false;
+            }
+        }
     }
 }

@@ -25,5 +25,7 @@ namespace PurgeChar
             InitializeComponent();
 
         }
+
+        public object PreviewText { get; set; }
     }
 }
