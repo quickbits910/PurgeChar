@@ -12,6 +12,7 @@ using System.Xml.Linq;
 using System.Reflection;
 using System.ComponentModel;
 using System.Threading;
+using System.Diagnostics;
 
 namespace PurgeChar
 {
@@ -89,9 +90,13 @@ namespace PurgeChar
         public MainWindow()
         {
             InitializeComponent();
-            chkBtn.IsEnabled = false;
-            cancelBtn.Visibility = Visibility.Hidden;
-            cancelBtn.IsEnabled = false;
+
+            m_oWorker = new BackgroundWorker();
+            m_oWorker.DoWork += new DoWorkEventHandler(m_oWorker_DoWork);
+            m_oWorker.ProgressChanged += new ProgressChangedEventHandler(m_oWorker_ProgressChanged);
+            m_oWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(m_oWorker_RunWorkerCompleted);
+            m_oWorker.WorkerReportsProgress = true;
+            m_oWorker.WorkerSupportsCancellation = true;
         }
 
         private void browseBtn_Click(object sender, RoutedEventArgs e)
@@ -348,7 +353,6 @@ namespace PurgeChar
 
         private void renameBtn_Click(object sender, RoutedEventArgs e)
         {
-            //Take XML extract and rename each file
             try
             {
                 exitBtn.IsEnabled = false;
@@ -356,81 +360,15 @@ namespace PurgeChar
                 browseBtn.IsEnabled = false;
                 progressBar1.Value = 0;
 
-                m_oWorker = new BackgroundWorker();
-
-                // Create a background worker thread that ReportsProgress &
-                // SupportsCancellation
-                // Hook up the appropriate events.
-                m_oWorker.DoWork += new DoWorkEventHandler(m_oWorker_DoWork);
-                m_oWorker.ProgressChanged += new ProgressChangedEventHandler
-                        (m_oWorker_ProgressChanged);
-                m_oWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler
-                        (m_oWorker_RunWorkerCompleted);
-                m_oWorker.WorkerReportsProgress = true;
-                m_oWorker.WorkerSupportsCancellation = true;
-
                 cancelBtn.Visibility = Visibility.Visible;
                 cancelBtn.IsEnabled = true;
 
                 m_oWorker.RunWorkerAsync();
-
-                ////Load XML file into preview
-                //XmlDocument XMLdoc = new XmlDocument();
-                //try
-                //{
-                //    XMLdoc.Load(readyToRenameLog);
-                //}
-                //catch (XmlException)
-                //{
-                //    System.Windows.Forms.MessageBox.Show("The XML file is invalid. Check for error logs.");
-                //    return;
-                //}
-
-                //if (XMLdoc.HasChildNodes)
-                //{
-                //    var xmlEntities = new List<XmlEntity>();
-
-                //    //Rename Files
-                //    foreach (XmlNode item in XMLdoc.ChildNodes)
-                //    {
-                //         try
-                //         {
-                //            GetChildren(item, "File");
-                //         }
-                //         catch (Exception exFile)
-                //         {
-                //            LogError(ErrorLogName, exFile.Message.ToString());
-                //         }
-                //    }
-
-                //    //Rename Folders
-                //    foreach (XmlNode item in XMLdoc.ChildNodes)
-                //    {
-                //        try
-                //        {
-                //            GetChildren(item, "Directory");
-                //        }
-                //        catch (Exception exDir)
-                //        {
-                //            LogError(ErrorLogName, exDir.Message.ToString());
-                //        }
-                //    }
-
-                //    //Success
-                //    MessageBoxResult result2 = System.Windows.MessageBox.Show("Renamed all files and folders. Check for error logs.", "Success!", MessageBoxButton.OK, MessageBoxImage.Information);
-                //}
-
-                ////XML has no child nodes
             }
             catch (Exception ex)
             {
-                //
-            }
-            finally
-            {
-                exitBtn.IsEnabled = true;
-                chkBtn.IsEnabled = true;
-                browseBtn.IsEnabled = true;
+                // Log the exception
+                Debug.WriteLine(ex.ToString());
             }
         }
 
@@ -441,31 +379,15 @@ namespace PurgeChar
         /// <param name="e"></param>
         void m_oWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            // The background process is complete. We need to inspect
-            // our response to see if an error occurred, a cancel was
-            // requested or if we completed successfully.  
-            if (e.Cancelled)
-            {
-                //lblStatus.Text = "Task Cancelled.";
-            }
+            exitBtn.IsEnabled = true;
+            chkBtn.IsEnabled = true;
+            browseBtn.IsEnabled = true;
 
-            // Check to see if an error occurred in the background process.
-
-            else if (e.Error != null)
+            if (e.Error != null)
             {
-                //lblStatus.Text = "Error while performing background operation.";
+                // Log the exception
+                Debug.WriteLine(e.Error.ToString());
             }
-            else
-            {
-                // Everything completed normally.
-                // lblStatus.Text = "Task Completed...";
-            }
-
-            //Change the status of the buttons on the UI accordingly
-            //btnStartAsyncOperation.Enabled = true;
-            //btnCancel.Enabled = false;
-            cancelBtn.Visibility = Visibility.Hidden;
-            cancelBtn.IsEnabled = false;
         }
 
         /// <summary>
